@@ -1,160 +1,173 @@
-# ECMAScript 6 <sup>[git.io/es6features](http://git.io/es6features)</sup>
+# ES2015
 
-## Introduction
-ECMAScript 6, also known as ECMAScript 2015, is the latest version of the ECMAScript standard.  ES6 is a significant update to the language, and the first update to the language since ES5 was standardized in 2009. Implementation of these features in major JavaScript engines is [underway now](http://kangax.github.io/es5-compat-table/es6/).
+## 简介
 
-See the [ES6 standard](http://www.ecma-international.org/ecma-262/6.0/) for full specification of the ECMAScript 6 language.
+> 参考
+>
+> Babel Learn ES2015： https://babeljs.io/docs/en/learn
 
-ES6 includes the following new features:
-- [arrows](#arrows)
-- [classes](#classes)
-- [enhanced object literals](#enhanced-object-literals)
-- [template strings](#template-strings)
-- [destructuring](#destructuring)
-- [default + rest + spread](#default--rest--spread)
-- [let + const](#let--const)
-- [iterators + for..of](#iterators--forof)
-- [generators](#generators)
-- [unicode](#unicode)
-- [modules](#modules)
-- [module loaders](#module-loaders)
-- [map + set + weakmap + weakset](#map--set--weakmap--weakset)
-- [proxies](#proxies)
-- [symbols](#symbols)
-- [subclassable built-ins](#subclassable-built-ins)
-- [promises](#promises)
-- [math + number + string + array + object APIs](#math--number--string--array--object-apis)
-- [binary and octal literals](#binary-and-octal-literals)
-- [reflect api](#reflect-api)
-- [tail calls](#tail-calls)
+ES2015 是该语言的一次重大更新，自 2009 年被标准化的 ES5 以来的一次最主要更新。主要的 JavaScript 引擎也在实现这些特性。
 
-## ECMAScript 6 Features
+查看[ES2015 标准](http://www.ecma-international.org/ecma-262/6.0/index.html)的所有规格
 
-### Arrows
-Arrows are a function shorthand using the `=>` syntax.  They are syntactically similar to the related feature in C#, Java 8 and CoffeeScript.  They support both statement block bodies as well as expression bodies which return the value of the expression.  Unlike functions, arrows share the same lexical `this` as their surrounding code.
+## ECMAScript 2015 特性
 
-```JavaScript
+### Arrows and Lexical This
+
+箭头函数是使用 => 语法的简写函数，支持表达式和带函数体的写法，与普通函数不同的是，箭头函数与上下文共享同一个词法 this, 如果箭头函数在另一个函数里面那么它将共享它父级函数的“arguments”变量
+
+```js
 // Expression bodies
 var odds = evens.map(v => v + 1);
 var nums = evens.map((v, i) => v + i);
-var pairs = evens.map(v => ({even: v, odd: v + 1}));
 
 // Statement bodies
 nums.forEach(v => {
-  if (v % 5 === 0)
-    fives.push(v);
+  if (v % 5 === 0) fives.push(v);
 });
 
 // Lexical this
 var bob = {
-  _name: "Bob",
-  _friends: [],
+  _name: 'Bob',
+  _friends: [1],
   printFriends() {
     this._friends.forEach(f =>
-      console.log(this._name + " knows " + f));
-  }
-}
-```
+      console.log(this._name + ' knows ' + f, this === bob),
+    );
+  },
+};
+bob.printFriends(); // returns: Bob knows 1 true
 
-More info: [MDN Arrow Functions](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Functions/Arrow_functions)
+// Lexical arguments
+function square() {
+  let example = () => {
+    let numbers = [];
+    for (let number of arguments) {
+      numbers.push(number * number);
+    }
+
+    return numbers;
+  };
+
+  return example();
+}
+square(2, 4, 7.5, 8, 11.5, 21); // returns: [4, 16, 56.25, 64, 132.25, 441]
+```
 
 ### Classes
-ES6 classes are a simple sugar over the prototype-based OO pattern.  Having a single convenient declarative form makes class patterns easier to use, and encourages interoperability.  Classes support prototype-based inheritance, super calls, instance and static methods and constructors.
 
-```JavaScript
-class SkinnedMesh extends THREE.Mesh {
-  constructor(geometry, materials) {
-    super(geometry, materials);
+ES2015 classes 只是一种基于原型的面向对象模式的语法糖，简单方便的声明形式使得类模式更易使用，也增加了互操作性。类支持基于原型的继承、super 调用、实例方法、静态方法和构造函数。
 
-    this.idMatrix = SkinnedMesh.defaultMatrix();
-    this.bones = [];
-    this.boneMatrices = [];
-    //...
+```js
+class Person {
+  constructor(name) {
+    this.name = name;
   }
-  update(camera) {
-    //...
-    super.update();
-  }
-  get boneCount() {
-    return this.bones.length;
-  }
-  set matrixType(matrixType) {
-    this.idMatrix = SkinnedMesh[matrixType]();
-  }
-  static defaultMatrix() {
-    return new THREE.Matrix4();
+  hello() {
+    return 'Hello, I am ' + this.name + '.';
   }
 }
+class Actor extends Person {
+  hello() {
+    return super.hello() + ' I am an actor.';
+  }
+  static birth() {
+    return new Person();
+  }
+  get fullName() {
+    return `${this.firstName} ${this.lastName}`;
+  }
+  set age(years) {
+    this.theAge = years;
+  }
+}
+var tomCruise = new Actor('Tom Cruise');
+tomCruise.hello();
 ```
 
-More info: [MDN Classes](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Classes)
-
 ### Enhanced Object Literals
-Object literals are extended to support setting the prototype at construction, shorthand for `foo: foo` assignments, defining methods, making super calls, and computing property names with expressions.  Together, these also bring object literals and class declarations closer together, and let object-based design benefit from some of the same conveniences.
 
-```JavaScript
+增强的对象字面量，支持构造时指定原型`__proto__`, 属性`handle: handle`赋值简写，方法定义及 super 调用，使用计算属性名。这些加起来使得字面量跟类声明更相近，基于对象的设计也从这种便利中获益。
+
+```js
 var obj = {
-    // __proto__
-    __proto__: theProtoObj,
-    // Shorthand for ‘handler: handler’
-    handler,
-    // Methods
-    toString() {
-     // Super calls
-     return "d " + super.toString();
-    },
-    // Computed (dynamic) property names
-    [ 'prop_' + (() => 42)() ]: 42
+  // 1. Sets the prototype. "__proto__" or '__proto__' would also work.
+  __proto__: theProtoObj,
+  // Computed property name does not set prototype or trigger early error for
+  // duplicate __proto__ properties.
+  ['__proto__']: somethingElse,
+  // 2. Shorthand for ‘handler: handler’
+  handler,
+  // 3. Methods
+  toString() {
+    // 4. Super calls
+    return 'd ' + super.toString();
+  },
+  // 5. Computed (dynamic) property names
+  ['prop_' + (() => 42)()]: 42,
 };
 ```
 
-More info: [MDN Grammar and types: Object literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Object_literals)
-
 ### Template Strings
-Template strings provide syntactic sugar for constructing strings.  This is similar to string interpolation features in Perl, Python and more.  Optionally, a tag can be added to allow the string construction to be customized, avoiding injection attacks or constructing higher level data structures from string contents.
 
-```JavaScript
+模板字符串提供了构建字符串的语法糖。这类似于 Perl、Python 和其他语言中的字符串插值特性。此外，作为可选项，使用标签可以自定义字符串的构建行为，避免注入攻击，或者基于字符串构建高阶的数据结构。
+
+```js
 // Basic literal string creation
-`In JavaScript '\n' is a line-feed.`
+const basic = `This is a pretty little template string.`;
 
 // Multiline strings
-`In JavaScript this is
- not legal.`
+const multi = `In ES5 this is
+ not legal.`;
 
-// String interpolation
-var name = "Bob", time = "today";
-`Hello ${name}, how are you ${time}?`
+// Interpolate variable bindings
+var name = 'Bob',
+  time = 'today';
+`Hello ${name}, how are you ${time}?`;
+
+// Unescaped template strings
+String.raw`In ES5 "\n" is a line-feed.`;
+
+// tag template
 
 // Construct an HTTP request prefix is used to interpret the replacements and construction
-POST`http://foo.org/bar?a=${a}&b=${b}
-     Content-Type: application/json
-     X-Credentials: ${credentials}
-     { "foo": ${foo},
-       "bar": ${bar}}`(myOnReadyStateChangeHandler);
+tag`Hello ${a + b} world ${a * b}`;
+// the same as
+tag(['Hello ', ' world ', ''], a + b, a * b);
+
+GET`http://foo.org/bar?a=${a}&b=${b}
+    Content-Type: application/json
+    X-Credentials: ${credentials}
+    { "foo": ${foo},
+      "bar": ${bar}}`(myOnReadyStateChangeHandler);
 ```
 
-More info: [MDN Template Strings](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/template_strings)
-
 ### Destructuring
-Destructuring allows binding using pattern matching, with support for matching arrays and objects.  Destructuring is fail-soft, similar to standard object lookup `foo["bar"]`, producing `undefined` values when not found.
 
-```JavaScript
+解构允许使用模式匹配赋值，支持数组和对象。解构是会失败弱化的，类似对象查找过程 `foo['bar']`，如果未找到则置为 undefined 也可以指定默认值。
+
+```js
 // list matching
-var [a, , b] = [1,2,3];
+var [a, , b] = [1, 2, 3];
+a === 1;
+b === 3;
 
 // object matching
-var { op: a, lhs: { op: b }, rhs: c }
-       = getASTNode()
+var {
+  op: a,
+  lhs: { op: b },
+  rhs: c,
+} = getASTNode();
 
 // object matching shorthand
 // binds `op`, `lhs` and `rhs` in scope
-var {op, lhs, rhs} = getASTNode()
+var { op, lhs, rhs } = getASTNode();
 
 // Can be used in parameter position
-function g({name: x}) {
+function g({ name: x }) {
   console.log(x);
 }
-g({name: 5})
+g({ name: 5 });
 
 // Fail-soft destructuring
 var [a] = [];
@@ -163,85 +176,103 @@ a === undefined;
 // Fail-soft destructuring with defaults
 var [a = 1] = [];
 a === 1;
+
+// Destructuring + defaults arguments
+function r({ x, y, w = 10, h = 10 }) {
+  return x + y + w + h;
+}
+r({ x: 1, y: 2 }) === 23;
 ```
 
-More info: [MDN Destructuring assignment](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment)
-
 ### Default + Rest + Spread
-Callee-evaluated default parameter values.  Turn an array into consecutive arguments in a function call.  Bind trailing parameters to an array.  Rest replaces the need for `arguments` and addresses common cases more directly.
 
-```JavaScript
-function f(x, y=12) {
+被调函数支持设置参数默认值，`...` 运算符可以将数组展开成连续的参数给函数调用，`...` 在定义函数时也可以将剩余的参数收集成一个数组，剩余参数 Rest 代替了`arguments`的使用，更直接的解决常见问题。
+
+```js
+// Default
+function f(x, y = 12) {
   // y is 12 if not passed (or passed as undefined)
   return x + y;
 }
-f(3) == 15
-```
-```JavaScript
+f(3) == 15;
+
+// Rest
 function f(x, ...y) {
   // y is an Array
   return x * y.length;
 }
-f(3, "hello", true) == 6
-```
-```JavaScript
+f(3, 'hello', true) == 6;
+
+// Spread
 function f(x, y, z) {
   return x + y + z;
 }
 // Pass each elem of array as argument
-f(...[1,2,3]) == 6
+f(...[1, 2, 3]) == 6;
 ```
 
-More MDN info: [Default parameters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Default_parameters), [Rest parameters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters), [Spread Operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_operator)
-
 ### Let + Const
-Block-scoped binding constructs.  `let` is the new `var`.  `const` is single-assignment.  Static restrictions prevent use before assignment.
 
+let 和 const 都是绑定构造的块级作用域。let 是新的 var。const 是单次赋值的。const 的静态限制禁止变量在赋值前使用。
 
-```JavaScript
+```js
 function f() {
   {
     let x;
     {
-      // okay, block scoped name
-      const x = "sneaky";
-      // error, const
-      x = "foo";
+      // this is ok since it's a block scoped name
+      const x = 'sneaky';
+      // error, was just defined with `const` above
+      x = 'foo';
     }
-    // error, already declared in block
-    let x = "inner";
+    // this is ok since it was declared with `let`
+    x = 'bar';
+    // error, already declared above in this block
+    let x = 'inner';
   }
 }
 ```
 
-More MDN info: [let statement](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let), [const statement](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const)
-
 ### Iterators + For..Of
-Iterator objects enable custom iteration like CLR IEnumerable or Java Iterable.  Generalize `for..in` to custom iterator-based iteration with `for..of`.  Don’t require realizing an array, enabling lazy design patterns like LINQ.
 
-```JavaScript
+Iterator 对象让 javascript 拥有了像 CLR IEnumerable 和 Java Iterable 一样自定义迭代器的能力。将 for..in 转换成基于迭代器的自定义遍历的 for..of 形式。不需要实现一个类似 LINQ 中惰性设计模式的数组。
+
+```js
 let fibonacci = {
   [Symbol.iterator]() {
-    let pre = 0, cur = 1;
+    let pre = 0,
+      cur = 1;
     return {
       next() {
         [pre, cur] = [cur, pre + cur];
-        return { done: false, value: cur }
-      }
-    }
-  }
-}
+        return { done: false, value: cur };
+      },
+    };
+  },
+};
 
 for (var n of fibonacci) {
   // truncate the sequence at 1000
-  if (n > 1000)
-    break;
+  if (n > 1000) break;
   console.log(n);
+}
+
+// Getting the iterator from an array returns an iterator of values
+const a = [1, 2, 3];
+let it = a[Symbol.iterator]();
+console.log(it.next().value); //1
+console.log(it.next().value); //2
+console.log(it.next().value); //3
+
+//get the index as well, using `entries()`
+for (const [i, v] of ['a', 'b', 'c'].entries()) {
+  console.log(i, v);
 }
 ```
 
-Iteration is based on these duck-typed interfaces (using [TypeScript](http://typescriptlang.org) type syntax for exposition only):
-```TypeScript
+Iteration 基于 [duck-typed](https://en.wikipedia.org/wiki/Duck_typing) 的接口(以下使用 TypeScript 的语法，仅供解释用)
+
+```js
 interface IteratorResult {
   done: boolean;
   value: any;
@@ -254,223 +285,229 @@ interface Iterable {
 }
 ```
 
-More info: [MDN for...of](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...of)
-
 ### Generators
-Generators simplify iterator-authoring using `function*` and `yield`.  A function declared as function* returns a Generator instance.  Generators are subtypes of iterators which include additional  `next` and `throw`.  These enable values to flow back into the generator, so `yield` is an expression form which returns a value (or throws).
 
-Note: Can also be used to enable ‘await’-like async programming, see also ES7 `await` proposal.
+Generators 使用 `function*` 和 `yield` 的语法简化了迭代器的书写。一个使用 `function*` 声明的函数返回一个 Generator 实例。Generators 也是迭代器的一种，但它拥有额外的 next 和 throw 方法。这允许值回到 generator 中，所以 yield 是一种返回（或抛出）值的表达式形式。
 
-```JavaScript
+注意：可以用它来进行类似‘await’的异步编程，具体可以查看 ES7 的 [await](https://github.com/lukehoban/ecmascript-asyncawait) 提案
+
+```js
 var fibonacci = {
   [Symbol.iterator]: function*() {
-    var pre = 0, cur = 1;
+    var pre = 0,
+      cur = 1;
     for (;;) {
       var temp = pre;
       pre = cur;
       cur += temp;
       yield cur;
     }
-  }
-}
+  },
+};
 
 for (var n of fibonacci) {
   // truncate the sequence at 1000
-  if (n > 1000)
-    break;
+  if (n > 1000) break;
   console.log(n);
 }
 ```
 
-The generator interface is (using [TypeScript](http://typescriptlang.org) type syntax for exposition only):
+这个 generator 接口定义是（使用 TypeScript 类型语法定义来解释）：
 
-```TypeScript
+```ts
 interface Generator extends Iterator {
-    next(value?: any): IteratorResult;
-    throw(exception: any);
+  next(value?: any): IteratorResult;
+  throw(exception: any);
 }
 ```
 
-More info: [MDN Iteration protocols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols)
+Unicode
 
-### Unicode
-Non-breaking additions to support full Unicode, including new Unicode literal form in strings and new RegExp `u` mode to handle code points, as well as new APIs to process strings at the 21bit code points level.  These additions support building global apps in JavaScript.
+支持完整 Unicode 的非破坏性添加，包括字符串中新的 unicode 字面量和新的 RegExp `u` 模式来处理码位（字符在字符集中的位置），以及新的 APIs 在 [21bit 码位级别](https://zh.wikipedia.org/wiki/Unicode#.E7.BC.96.E7.A0.81.E6.96.B9.E5.BC.8F) 上处理字符串，
+增加这些支持后可以使用 Javascript 构建全球化应用。
 
-```JavaScript
+```js
 // same as ES5.1
-"𠮷".length == 2
+'𠮷'.length == 2;
 
 // new RegExp behaviour, opt-in ‘u’
-"𠮷".match(/./u)[0].length == 2
+'𠮷'.match(/./u)[0].length == 2;
 
 // new form
-"\u{20BB7}"=="𠮷"=="\uD842\uDFB7"
+('\u{20BB7}' == '𠮷') == '\uD842\uDFB7';
 
 // new String ops
-"𠮷".codePointAt(0) == 0x20BB7
+'𠮷'.codePointAt(0) == 0x20bb7;
 
 // for-of iterates code points
-for(var c of "𠮷") {
+for (var c of '𠮷') {
   console.log(c);
 }
 ```
 
-More info: [MDN RegExp.prototype.unicode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/unicode)
-
 ### Modules
-Language-level support for modules for component definition.  Codifies patterns from popular JavaScript module loaders (AMD, CommonJS). Runtime behaviour defined by a host-defined default loader.  Implicitly async model – no code executes until requested modules are available and processed.
 
-```JavaScript
+在 ES2015 之前，至少有三个主要的模块标准竞争，这些标准使社区支离破碎：
+
+- AMD
+- RequireJS
+- CommonJS
+
+ES2015 将这些标准化为通用的格式，在语言层面上得到了支持。运行时行为由宿主加载器定义，隐式异步模型 - 直到全部请求的模块均可用且经处理后，才会执行当前模块内的代码。
+
+```js
 // lib/math.js
 export function sum(x, y) {
   return x + y;
 }
 export var pi = 3.141593;
 ```
-```JavaScript
+
+```js
 // app.js
-import * as math from "lib/math";
-alert("2π = " + math.sum(math.pi, math.pi));
+import * as math from 'lib/math';
+console.log('2π = ' + math.sum(math.pi, math.pi));
 ```
-```JavaScript
+
+```js
 // otherApp.js
-import {sum, pi} from "lib/math";
-alert("2π = " + sum(pi, pi));
+import { sum, pi } from 'lib/math';
+console.log('2π = ' + sum(pi, pi));
 ```
 
-Some additional features include `export default` and `export *`:
+一些额外的新特性，包括 `export default` 以及 `export *`
 
-```JavaScript
+```js
 // lib/mathplusplus.js
-export * from "lib/math";
+export * from 'lib/math';
 export var e = 2.71828182846;
 export default function(x) {
-    return Math.log(x);
+  return Math.exp(x);
 }
 ```
-```JavaScript
+
+```js
 // app.js
-import ln, {pi, e} from "lib/mathplusplus";
-alert("2π = " + ln(e)*pi*2);
-```
-
-More MDN info: [import statement](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import), [export statement](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export)
-
-### Module Loaders
-Module loaders support:
-- Dynamic loading
-- State isolation
-- Global namespace isolation
-- Compilation hooks
-- Nested virtualization
-
-The default module loader can be configured, and new loaders can be constructed to evaluate and load code in isolated or constrained contexts.
-
-```JavaScript
-// Dynamic loading – ‘System’ is default loader
-System.import('lib/math').then(function(m) {
-  alert("2π = " + m.sum(m.pi, m.pi));
-});
-
-// Create execution sandboxes – new Loaders
-var loader = new Loader({
-  global: fixup(window) // replace ‘console.log’
-});
-loader.eval("console.log('hello world!');");
-
-// Directly manipulate module cache
-System.get('jquery');
-System.set('jquery', Module({$: $})); // WARNING: not yet finalized
+import exp, { pi, e } from 'lib/mathplusplus';
+console.log('e^π = ' + exp(pi));
 ```
 
 ### Map + Set + WeakMap + WeakSet
-Efficient data structures for common algorithms.  WeakMaps provides leak-free object-key’d side tables.
 
-```JavaScript
+用于实现常见算法的高效数据结构，WeakMaps 提供不会泄露的对象键(对象作为键名，而且键名指向对象)索引表 注：所谓的不会泄露，指的是对应的对象可能会被自动回收，回收后 WeakMaps 自动移除对应的键值对，有助于防止内存泄露
+
+WeekSet 与 Set 区别：
+
+1. WeakSet 的成员只能是对象，不能是其他类型的值
+2. WeakSet 中的对象都是弱引用，如果其他对象都不再引用该对象，那么垃圾回收机制随时会回收该对象所占用的内存，由于垃圾回收的不可预测性，所以 ES6 规定 WeakSet 不可遍历。
+
+WeekMap 与 Map 区别：
+
+1. WeakMap 只接受对象作为键名（null 除外），不接受其他类型的值作为键名
+2. WeakMap 的键名所指向的对象，不计入垃圾回收机制，注意弱引用的只是键名，而不是键值。键值依然是正常引用。
+
+```js
 // Sets
 var s = new Set();
-s.add("hello").add("goodbye").add("hello");
+s.add('hello')
+  .add('goodbye')
+  .add('hello');
 s.size === 2;
-s.has("hello") === true;
+s.has('hello') === true;
 
 // Maps
 var m = new Map();
-m.set("hello", 42);
+m.set('hello', 42);
 m.set(s, 34);
 m.get(s) == 34;
 
 // Weak Maps
 var wm = new WeakMap();
 wm.set(s, { extra: 42 });
-wm.size === undefined
+wm.size === undefined;
 
 // Weak Sets
 var ws = new WeakSet();
 ws.add({ data: 42 });
 // Because the added object has no other references, it will not be held in the set
+// 因为加入的对象没有任何引用，它将不被保留在集合中，也就是可能会消失
 ```
 
-More MDN info: [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map), [Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set), [WeakMap](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap), [WeakSet](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakSet)
-
 ### Proxies
-Proxies enable creation of objects with the full range of behaviors available to host objects.  Can be used for interception, object virtualization, logging/profiling, etc.
 
-```JavaScript
+代理可以创造一个具备宿主对象全部可用行为的对象。可用于拦截、对象虚拟化、日志/分析等
+
+```js
 // Proxying a normal object
 var target = {};
 var handler = {
-  get: function (receiver, name) {
+  get: function(receiver, name) {
     return `Hello, ${name}!`;
-  }
+  },
 };
 
 var p = new Proxy(target, handler);
 p.world === 'Hello, world!';
 ```
 
-```JavaScript
+```js
 // Proxying a function object
-var target = function () { return 'I am the target'; };
+var target = function() {
+  return 'I am the target';
+};
 var handler = {
-  apply: function (receiver, ...args) {
+  apply: function(receiver, ...args) {
     return 'I am the proxy';
-  }
+  },
 };
 
 var p = new Proxy(target, handler);
 p() === 'I am the proxy';
 ```
 
-There are traps available for all of the runtime-level meta-operations:
+所有运行时级别的元操作都有对应的陷阱（使得这些操作都可以被代理）
 
-```JavaScript
+```js
 var handler =
 {
-  get:...,
-  set:...,
-  has:...,
-  deleteProperty:...,
-  apply:...,
-  construct:...,
-  getOwnPropertyDescriptor:...,
-  defineProperty:...,
-  getPrototypeOf:...,
-  setPrototypeOf:...,
-  enumerate:...,
-  ownKeys:...,
-  preventExtensions:...,
-  isExtensible:...
+  // target.prop
+  get: ...,
+  // target.prop = value
+  set: ...,
+  // 'prop' in target
+  has: ...,
+  // delete target.prop
+  deleteProperty: ...,
+  // target(...args)
+  apply: ...,
+  // new target(...args)
+  construct: ...,
+  // Object.getOwnPropertyDescriptor(target, 'prop')
+  getOwnPropertyDescriptor: ...,
+  // Object.defineProperty(target, 'prop', descriptor)
+  defineProperty: ...,
+  // Object.getPrototypeOf(target), Reflect.getPrototypeOf(target),
+  // target.__proto__, object.isPrototypeOf(target), object instanceof target
+  getPrototypeOf: ...,
+  // Object.setPrototypeOf(target), Reflect.setPrototypeOf(target)
+  setPrototypeOf: ...,
+  // for (let i in target) {}
+  enumerate: ...,
+  // Object.keys(target)
+  ownKeys: ...,
+  // Object.preventExtensions(target)
+  preventExtensions: ...,
+  // Object.isExtensible(target)
+  isExtensible :...
 }
 ```
 
-More info: [MDN Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
-
 ### Symbols
-Symbols enable access control for object state.  Symbols allow properties to be keyed by either `string` (as in ES5) or `symbol`.  Symbols are a new primitive type. Optional `description` parameter used in debugging - but is not part of identity.  Symbols are unique (like gensym), but not private since they are exposed via reflection features like `Object.getOwnPropertySymbols`.
 
+Symbol 能够实现对象状态的访问控制，允许使用 string(与 ES5 相同)或 symbol 作为键来访问属性。Symbol 是一个新的原语类型，可选的 name 参数可以用于调试——但并不是标识符的一部分（哪怕一样的 name 的两个 Symbol 也是不等的）。Symbol 是独一无二的(如同 gensym（所产生的符号)，但不是私有的，因为它们可以通过类似 Object.getOwnPropertySymbols 的反射特性暴露出来。
 
-```JavaScript
-var MyClass = (function() {
+```js
+(function() {
 
   // module scoped symbol
   var key = Symbol("key");
@@ -485,126 +522,120 @@ var MyClass = (function() {
     }
   };
 
-  return MyClass;
+  // Limited support from Babel, full support requires native implementation.
+  typeof key === "symbol"
 })();
 
 var c = new MyClass("hello")
 c["key"] === undefined
 ```
 
-More info: [MDN Symbol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol)
-
 ### Subclassable Built-ins
-In ES6, built-ins like `Array`, `Date` and DOM `Element`s can be subclassed.
 
-Object construction for a function named `Ctor` now uses two-phases (both virtually dispatched):
-- Call `Ctor[@@create]` to allocate the object, installing any special behavior
-- Invoke constructor on new instance to initialize
+ES2015 内建对象如 `Array`、`Date` 和 DOM `Elements` 可被子类化
 
-The known `@@create` symbol is available via `Symbol.create`.  Built-ins now expose their `@@create` explicitly.
-
-```JavaScript
-// Pseudo-code of Array
-class Array {
-    constructor(...args) { /* ... */ }
-    static [Symbol.create]() {
-        // Install special [[DefineOwnProperty]]
-        // to magically update 'length'
-    }
-}
-
+```js
 // User code of Array subclass
 class MyArray extends Array {
-    constructor(...args) { super(...args); }
+  constructor(...args) {
+    super(...args);
+  }
 }
 
-// Two-phase 'new':
-// 1) Call @@create to allocate object
-// 2) Invoke constructor on new instance
 var arr = new MyArray();
 arr[1] = 12;
-arr.length == 2
+arr.length == 2;
 ```
 
-### Math + Number + String + Array + Object APIs
-Many new library additions, including core Math libraries, Array conversion helpers, String helpers, and Object.assign for copying.
+### Math + Number + String + Object APIs
 
-```JavaScript
-Number.EPSILON
-Number.isInteger(Infinity) // false
-Number.isNaN("NaN") // false
+许多新加库包括 Math 库， Array 转换 helpers 和用于拷贝的 Object.assign
 
-Math.acosh(3) // 1.762747174039086
-Math.hypot(3, 4) // 5
-Math.imul(Math.pow(2, 32) - 1, Math.pow(2, 32) - 2) // 2
+```js
+Number.EPSILON;
+Number.isInteger(Infinity); // false
+Number.isNaN('NaN'); // false
 
-"abcde".includes("cd") // true
-"abc".repeat(3) // "abcabcabc"
+Math.acosh(3); // 1.762747174039086
+Math.hypot(3, 4); // 5
+Math.imul(Math.pow(2, 32) - 1, Math.pow(2, 32) - 2); // 2
 
-Array.from(document.querySelectorAll('*')) // Returns a real Array
-Array.of(1, 2, 3) // Similar to new Array(...), but without special one-arg behavior
-[0, 0, 0].fill(7, 1) // [0,7,7]
-[1, 2, 3].find(x => x == 3) // 3
-[1, 2, 3].findIndex(x => x == 2) // 1
-[1, 2, 3, 4, 5].copyWithin(3, 0) // [1, 2, 3, 1, 2]
-["a", "b", "c"].entries() // iterator [0, "a"], [1,"b"], [2,"c"]
-["a", "b", "c"].keys() // iterator 0, 1, 2
-["a", "b", "c"].values() // iterator "a", "b", "c"
+'abcde'.includes('cd'); // true
+'abc'.repeat(3); // "abcabcabc"
 
-Object.assign(Point, { origin: new Point(0,0) })
+Array.from(document.querySelectorAll('*')); // Returns a real Array
+Array.of(1, 2, 3); // Similar to new Array(...), but without special one-arg behavior
+[0, 0, 0].fill(7, 1); // [0,7,7]
+[1, 2, 3].findIndex(x => x == 2); // 1
+['a', 'b', 'c'].entries(); // iterator [0, "a"], [1,"b"], [2,"c"]
+['a', 'b', 'c'].keys(); // iterator 0, 1, 2
+['a', 'b', 'c'].values(); // iterator "a", "b", "c"
+
+Object.assign(Point, { origin: new Point(0, 0) });
 ```
-
-More MDN info: [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number), [Math](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math), [Array.from](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from), [Array.of](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/of), [Array.prototype.copyWithin](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/copyWithin), [Object.assign](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
 
 ### Binary and Octal Literals
-Two new numeric literal forms are added for binary (`b`) and octal (`o`).
 
-```JavaScript
-0b111110111 === 503 // true
-0o767 === 503 // true
+加入了对二进制(b)和八进制(o)字面量的支持
+
+```js
+0b111110111 === 503; // true
+0o767 === 503; // true
 ```
 
 ### Promises
-Promises are a library for asynchronous programming.  Promises are a first class representation of a value that may be made available in the future.  Promises are used in many existing JavaScript libraries.
 
-```JavaScript
+Promise 是用来进行异步编程的库，Promise 是对一个“将来可能会变得可用”的值的第一类表示，Promise 在现有的许多 JavaScript 库中使用
+
+```js
 function timeout(duration = 0) {
-    return new Promise((resolve, reject) => {
-        setTimeout(resolve, duration);
-    })
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, duration);
+  });
 }
 
-var p = timeout(1000).then(() => {
+var p = timeout(1000)
+  .then(() => {
     return timeout(2000);
-}).then(() => {
-    throw new Error("hmm");
-}).catch(err => {
+  })
+  .then(() => {
+    throw new Error('hmm');
+  })
+  .catch(err => {
     return Promise.all([timeout(100), timeout(200)]);
-})
+  });
 ```
-
-More info: [MDN Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 
 ### Reflect API
-Full reflection API exposing the runtime-level meta-operations on objects.  This is effectively the inverse of the Proxy API, and allows making calls corresponding to the same meta-operations as the proxy traps.  Especially useful for implementing proxies.
 
-```JavaScript
-// No sample yet
+整个反射 API 暴露了对象运行时级别的元操作，这实际上与 Proxy API 刚好相反，它允许在 proxy 捕获时调用与 Proxy 接口相对应的元操作。在实现 proxies 时尤其有用。
+
+```js
+var O = { a: 1 };
+Object.defineProperty(O, 'b', { value: 2 });
+O[Symbol('c')] = 3;
+
+Reflect.ownKeys(O); // ['a', 'b', Symbol(c)]
+
+function C(a, b) {
+  this.c = a + b;
+}
+var instance = Reflect.construct(C, [20, 22]);
+instance.c; // 42
 ```
 
-More info: [MDN Reflect](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect)
-
 ### Tail Calls
-Calls in tail-position are guaranteed to not grow the stack unboundedly.  Makes recursive algorithms safe in the face of unbounded inputs.
 
-```JavaScript
+尾调用确保堆栈不会无限增长，在面对无限制输入时确保递归算法的安全。
+
+```js
 function factorial(n, acc = 1) {
-    'use strict';
+    "use strict";
     if (n <= 1) return acc;
     return factorial(n - 1, n * acc);
 }
 
 // Stack overflow in most implementations today,
-// but safe on arbitrary inputs in ES6
+// but safe on arbitrary inputs in ES2015
 factorial(100000)
 ```
